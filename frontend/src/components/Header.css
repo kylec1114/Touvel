@@ -1,0 +1,149 @@
+/* Header.css - Navigation Header Styling */
+
+.header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 70px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+}
+
+.logo-icon {
+  font-size: 24px;
+  margin-right: 8px;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.nav-menu {
+  display: flex;
+  gap: 30px;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.3s ease;
+  padding: 5px 0;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover {
+  color: #fff;
+  border-bottom-color: #fff;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.user-greeting {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 14px;
+}
+
+.btn-logout,
+.btn-login,
+.btn-register {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-logout {
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.btn-logout:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-color: rgba(255, 255, 255, 0.8);
+}
+
+.btn-login {
+  background-color: transparent;
+  color: white;
+  border: 2px solid white;
+}
+
+.btn-login:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-register {
+  background-color: white;
+  color: #667eea;
+}
+
+.btn-register:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .header-container {
+    height: 60px;
+    padding: 0 15px;
+  }
+  
+  .nav-menu {
+    gap: 15px;
+    font-size: 12px;
+  }
+  
+  .logo-text {
+    font-size: 16px;
+  }
+  
+  .logo-icon {
+    font-size: 20px;
+    margin-right: 5px;
+  }
+  
+  .header-actions {
+    gap: 10px;
+  }
+  
+  .btn-logout,
+  .btn-login,
+  .btn-register {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
