@@ -1,4 +1,5 @@
 # 🌍 Touvel - Travel Planning Platform
+> 🚀 Deployed on Vercel - touvel-travel-app.vercel.app
 
 **Touvel** is a comprehensive travel planning application designed to revolutionize how people organize, plan, and share their journeys. Built with cutting-edge technology, it combines AI-powered itinerary generation, real-time pricing, and seamless booking management.
 
