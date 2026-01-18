@@ -1,7 +1,6 @@
 {
   "name": "touvel-frontend",
-  "version": "1.0.0",
-  "description": "Touvel Travel Planning Platform - React Frontend",
+"version": "1.0.1",  "description": "Touvel Travel Planning Platform - React Frontend",
   "private": true,
   "dependencies": {
     "react": "^18.2.0",
