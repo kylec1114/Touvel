@@ -23,7 +23,7 @@ router.get('/user/:userId', async (req, res) => {
 });
 
 // Get specific booking
-router.get('/:bookingId', auth, async (req, res) => {
+router.get('/:bookingId', async (req, res) => {
   try {
     const { bookingId } = req.params;
 
@@ -43,7 +43,7 @@ router.get('/:bookingId', auth, async (req, res) => {
 });
 
 // Create booking
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { destination_id, check_in, check_out, number_of_guests, total_price } = req.body;
     const userId = req.user.id;
@@ -69,7 +69,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update booking
-router.patch('/:bookingId', auth, async (req, res) => {
+router.patch('/:bookingId', async (req, res) => {
   try {
     const { bookingId } = req.params;
     const { check_in, check_out, number_of_guests, status } = req.body;
@@ -91,7 +91,7 @@ router.patch('/:bookingId', auth, async (req, res) => {
 });
 
 // Delete (cancel) booking
-router.delete('/:bookingId', auth, async (req, res) => {
+router.delete('/:bookingId', async (req, res) => {
   try {
     const { bookingId } = req.params;
 
