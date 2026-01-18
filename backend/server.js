@@ -47,13 +47,13 @@ app.use((req, res, next) => {
 
 // API Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/users', require('./routes/users'));
-app.use('/api/trips', require('./routes/trips'));
+// app.use('/api/users', require('./routes/users'));
+// app.use('/api/trips', require('./routes/trips'));
 app.use('/api/bookings', require('./routes/bookings'));
-app.use('/api/destinations', require('./routes/destinations'));
-app.use('/api/itinerary', require('./routes/itinerary'));
-app.use('/api/payments', require('./routes/payments'));
-app.use('/api/admin', require('./routes/admin'));
+// app.use('/api/destinations', require('./routes/destinations'));
+// app.use('/api/itinerary', require('./routes/itinerary'));
+// app.use('/api/payments', require('./routes/payments'));
+// app.use('/api/admin', require('./routes/admin'));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
