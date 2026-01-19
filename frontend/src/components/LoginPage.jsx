@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './LoginPage.css';
 
-function LoginPage() {
+function LoginPage({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -15,7 +15,7 @@ function LoginPage() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/auth/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -33,11 +33,19 @@ function LoginPage() {
       }
 
       // Store token in localStorage
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('userId', data.user.id);
+      localStorage.setItem('token', data.accessToken);
+      
+      // Call onLogin with user data
+      if (onLogin) {
+        onLogin(data.user);
+      }
 
-      // Redirect to home page
-      navigate('/');
+      // Redirect based on role
+      if (data.user.role === 'supplier') {
+        navigate('/supplier/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(err.message);
     } finally {
@@ -45,35 +53,44 @@ function LoginPage() {
     }
   };
 
+  const handleTestLogin = async (testEmail) => {
+    setEmail(testEmail);
+    setPassword('password123');
+    // Trigger form submission after state update
+    setTimeout(() => {
+      document.querySelector('form').requestSubmit();
+    }, 100);
+  };
+
   return (
     <div className="login-container">
       <div className="login-box">
-        <h1>Sign In to Touvel</h1>
-        <p className="subtitle">Plan your next adventure</p>
+        <h1>登入 Touvel</h1>
+        <p className="subtitle">計劃您的下一次冒險</p>
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email Address</label>
+            <label htmlFor="email">電郵地址</label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
+              placeholder="輸入您的電郵"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">密碼</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
+              placeholder="輸入您的密碼"
               required
             />
           </div>
@@ -83,12 +100,33 @@ function LoginPage() {
             disabled={loading}
             className="login-button"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? '登入中...' : '登入'}
           </button>
         </form>
 
+        <div className="test-accounts">
+          <p className="test-title">測試帳號（快速登入）：</p>
+          <div className="test-buttons">
+            <button
+              type="button"
+              className="test-btn"
+              onClick={() => handleTestLogin('traveler@example.com')}
+            >
+              旅客帳號
+            </button>
+            <button
+              type="button"
+              className="test-btn"
+              onClick={() => handleTestLogin('supplier@example.com')}
+            >
+              供應商帳號
+            </button>
+          </div>
+          <p className="test-hint">密碼：password123</p>
+        </div>
+
         <p className="signup-link">
-          Don't have an account? <a href="/register">Sign up here</a>
+          還沒有帳號？ <a href="/register">立即註冊</a>
         </p>
       </div>
     </div>

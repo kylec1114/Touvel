@@ -1,0 +1,1054 @@
+openapi: 3.0.3
+info:
+  title: Touvel Travel Booking Platform API
+  description: |
+    Multi-product, API-driven travel booking platform supporting itineraries, activities, 
+    transport, and accommodations with supplier management and AI-powered itinerary generation.
+    
+    ## Features
+    - Multi-product catalog (itineraries, activities, transport, accommodation)
+    - Supplier portal for product and inventory management
+    - Quote and booking flow with inventory locking
+    - AI-powered itinerary generation
+    - Role-based access control (traveler/supplier/admin)
+    
+  version: 1.0.0
+  contact:
+    name: Touvel API Support
+    email: support@touvel.com
+
+servers:
+  - url: http://localhost:5000/api
+    description: Development server
+  - url: https://api.touvel.com/api
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Products
+    description: Product catalog and search
+  - name: Suppliers
+    description: Supplier product and inventory management
+  - name: Bookings
+    description: Quote generation and booking management
+  - name: AI Itinerary
+    description: AI-powered itinerary generation
+
+security:
+  - BearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user
+      description: Create a new user account with optional role (traveler/supplier/admin)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                role:
+                  type: string
+                  enum: [traveler, supplier, admin]
+                  default: traveler
+                profile:
+                  type: object
+                  properties:
+                    firstName:
+                      type: string
+                    lastName:
+                      type: string
+                    phone:
+                      type: string
+                    country:
+                      type: string
+                    companyName:
+                      type: string
+                      description: Required for supplier role
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/UserBasic'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          description: Email already registered
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  accessToken:
+                    type: string
+                  refreshToken:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/UserBasic'
+        '401':
+          description: Invalid credentials
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      responses:
+        '200':
+          description: Current user details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  user:
+                    $ref: '#/components/schemas/User'
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Search and filter products
+      security: []
+      parameters:
+        - name: q
+          in: query
+          description: Search query
+          schema:
+            type: string
+        - name: destination
+          in: query
+          description: Destination ID
+          schema:
+            type: string
+            format: uuid
+        - name: type
+          in: query
+          description: Product type
+          schema:
+            type: string
+            enum: [itinerary, activity, transport, accommodation]
+        - name: tags
+          in: query
+          description: Comma-separated tags
+          schema:
+            type: string
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: size
+          in: query
+          schema:
+            type: integer
+            default: 30
+            maximum: 100
+      responses:
+        '200':
+          description: Product list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  total:
+                    type: integer
+                  page:
+                    type: integer
+                  size:
+                    type: integer
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductCard'
+
+  /products/{id}:
+    get:
+      tags:
+        - Products
+      summary: Get product details
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: locale
+          in: query
+          schema:
+            type: string
+            default: en
+      responses:
+        '200':
+          description: Product details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  product:
+                    $ref: '#/components/schemas/Product'
+
+  /products/{id}/availability:
+    get:
+      tags:
+        - Products
+      summary: Get product availability calendar
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Availability calendar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  productId:
+                    type: string
+                    format: uuid
+                  availability:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventorySlot'
+
+  /suppliers/products:
+    post:
+      tags:
+        - Suppliers
+      summary: Create a new product
+      description: Supplier only - Create a new product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                  message:
+                    type: string
+        '403':
+          description: Only suppliers can create products
+    
+    get:
+      tags:
+        - Suppliers
+      summary: List supplier's products
+      description: Supplier only - Get all products for current supplier
+      responses:
+        '200':
+          description: Supplier products
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProductSummary'
+
+  /suppliers/products/{id}:
+    put:
+      tags:
+        - Suppliers
+      summary: Update product
+      description: Supplier only - Update own product
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+
+  /suppliers/inventory/{productId}/calendar:
+    get:
+      tags:
+        - Suppliers
+      summary: Get inventory calendar
+      description: Supplier only - View inventory calendar for product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Inventory calendar
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  productId:
+                    type: string
+                    format: uuid
+                  slots:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InventorySlot'
+
+  /suppliers/inventory/{productId}:
+    put:
+      tags:
+        - Suppliers
+      summary: Update inventory
+      description: Supplier only - Update inventory slots for product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - updates
+              properties:
+                updates:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - date
+                      - capacity
+                      - basePrice
+                    properties:
+                      date:
+                        type: string
+                        format: date
+                      startTime:
+                        type: string
+                        format: time
+                      capacity:
+                        type: integer
+                      basePrice:
+                        type: number
+                      currency:
+                        type: string
+                        default: HKD
+      responses:
+        '200':
+          description: Inventory updated
+
+  /bookings/quote:
+    post:
+      tags:
+        - Bookings
+      summary: Create a quote
+      description: Generate a price quote without reducing inventory
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - date
+                - pax
+              properties:
+                productId:
+                  type: string
+                  format: uuid
+                date:
+                  type: string
+                  format: date
+                pax:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                        enum: [adult, child, infant]
+                      qty:
+                        type: integer
+                extras:
+                  type: array
+                  items:
+                    type: object
+                currency:
+                  type: string
+      responses:
+        '200':
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quote'
+
+  /bookings:
+    post:
+      tags:
+        - Bookings
+      summary: Create a booking
+      description: Create booking with atomic inventory reduction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                quoteId:
+                  type: string
+                  format: uuid
+                  description: Use existing quote OR provide productId/date/pax
+                productId:
+                  type: string
+                  format: uuid
+                date:
+                  type: string
+                  format: date
+                pax:
+                  type: array
+                  items:
+                    type: object
+                userInfo:
+                  type: object
+                  properties:
+                    name:
+                      type: string
+                    email:
+                      type: string
+                    phone:
+                      type: string
+                paymentMode:
+                  type: string
+                  enum: [pay_now, pay_later]
+                metadata:
+                  type: object
+      responses:
+        '201':
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BookingResponse'
+
+  /bookings/{id}/confirm:
+    post:
+      tags:
+        - Bookings
+      summary: Confirm booking
+      description: Confirm booking after payment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paymentRef:
+                  type: string
+      responses:
+        '200':
+          description: Booking confirmed
+
+  /bookings/{id}/cancel:
+    post:
+      tags:
+        - Bookings
+      summary: Cancel booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  bookingId:
+                    type: string
+                  status:
+                    type: string
+                  refundAmount:
+                    type: string
+                  currency:
+                    type: string
+
+  /bookings/user/me:
+    get:
+      tags:
+        - Bookings
+      summary: Get user bookings
+      responses:
+        '200':
+          description: User's bookings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  bookings:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BookingSummary'
+
+  /bookings/{id}:
+    get:
+      tags:
+        - Bookings
+      summary: Get booking details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Booking details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  booking:
+                    $ref: '#/components/schemas/Booking'
+
+  /ai/itineraries/generate:
+    post:
+      tags:
+        - AI Itinerary
+      summary: Generate AI itinerary
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - destination
+                - days
+              properties:
+                destination:
+                  type: string
+                days:
+                  type: integer
+                budget:
+                  type: number
+                currency:
+                  type: string
+                preferences:
+                  type: object
+      responses:
+        '200':
+          description: Itinerary generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  itineraryId:
+                    type: string
+                    format: uuid
+                  jsonPlan:
+                    type: object
+                  preview:
+                    type: string
+
+  /ai/itineraries/{id}/attach-products:
+    post:
+      tags:
+        - AI Itinerary
+      summary: Attach products to itinerary
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - mapping
+              properties:
+                mapping:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      slotId:
+                        type: string
+                      productId:
+                        type: string
+                        format: uuid
+      responses:
+        '200':
+          description: Products attached
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  attachedProducts:
+                    type: array
+                    items:
+                      type: object
+                  quote:
+                    type: object
+                    properties:
+                      total:
+                        type: string
+                      currency:
+                        type: string
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserBasic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        role:
+          type: string
+          enum: [traveler, supplier, admin]
+
+    User:
+      allOf:
+        - $ref: '#/components/schemas/UserBasic'
+        - type: object
+          properties:
+            firstName:
+              type: string
+            lastName:
+              type: string
+            phone:
+              type: string
+            country:
+              type: string
+
+    ProductCard:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        shortDesc:
+          type: string
+        type:
+          type: string
+        destination:
+          type: string
+        minPrice:
+          type: number
+        currency:
+          type: string
+        rating:
+          type: number
+        reviewsCount:
+          type: integer
+        thumbnailUrl:
+          type: string
+
+    Product:
+      allOf:
+        - $ref: '#/components/schemas/ProductCard'
+        - type: object
+          properties:
+            longDesc:
+              type: string
+            images:
+              type: array
+              items:
+                type: string
+            itinerary:
+              type: object
+            policies:
+              type: object
+            tags:
+              type: array
+              items:
+                type: string
+            supplier:
+              type: object
+              properties:
+                id:
+                  type: string
+                name:
+                  type: string
+
+    ProductCreate:
+      type: object
+      required:
+        - type
+        - title
+        - shortDesc
+      properties:
+        type:
+          type: string
+          enum: [itinerary, activity, transport, accommodation]
+        title:
+          type: string
+        shortDesc:
+          type: string
+        destinationId:
+          type: string
+          format: uuid
+        durationDays:
+          type: integer
+        durationHours:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        policies:
+          type: object
+        content:
+          type: object
+          properties:
+            locale:
+              type: string
+            longDesc:
+              type: string
+            itinerary:
+              type: object
+            images:
+              type: array
+
+    ProductUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        shortDesc:
+          type: string
+        status:
+          type: string
+          enum: [draft, pending_review, published, archived]
+        content:
+          type: object
+
+    ProductSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        destination:
+          type: string
+        bookingsCount:
+          type: integer
+
+    InventorySlot:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+        startTime:
+          type: string
+          format: time
+        capacity:
+          type: integer
+        remaining:
+          type: integer
+        basePrice:
+          type: number
+        currency:
+          type: string
+
+    Quote:
+      type: object
+      properties:
+        success:
+          type: boolean
+        quoteId:
+          type: string
+          format: uuid
+        total:
+          type: string
+        currency:
+          type: string
+        breakdown:
+          type: array
+          items:
+            type: object
+        validUntil:
+          type: string
+          format: date-time
+
+    BookingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        bookingId:
+          type: string
+          format: uuid
+        status:
+          type: string
+        total:
+          type: string
+        currency:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+
+    BookingSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        date:
+          type: string
+        status:
+          type: string
+        totalPrice:
+          type: number
+        currency:
+          type: string
+        productTitle:
+          type: string
+        destination:
+          type: string
+
+    Booking:
+      allOf:
+        - $ref: '#/components/schemas/BookingSummary'
+        - type: object
+          properties:
+            pax:
+              type: object
+            userInfo:
+              type: object
+            supplierName:
+              type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: Invalid token
