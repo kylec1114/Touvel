@@ -2,13 +2,17 @@ const express = require('express');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
+const db = require('../db');
 
-// 使用者註冊
+/**
+ * POST /api/auth/register
+ * User registration with role support
+ */
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, first_name, last_name, phone, country } = req.body;
+    const { email, password, role, profile } = req.body;
 
-    // 驗證輸入
+    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -23,50 +27,74 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    // 檢查郵箱是否已存在
-    const db = req.app.get('db');
-    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          error: 'Database error',
-          details: err.message
-        });
-      }
+    // Validate role
+    const validRoles = ['traveler', 'supplier', 'admin'];
+    const userRole = role || 'traveler';
+    
+    if (!validRoles.includes(userRole)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid role'
+      });
+    }
 
-      if (results.length > 0) {
-        return res.status(409).json({
-          success: false,
-          error: 'Email already registered'
-        });
-      }
+    // Check if email already exists
+    const existingUser = await db.query(
+      'SELECT id FROM users WHERE email = $1',
+      [email]
+    );
 
-      // 密碼雜湊
-      const hashedPassword = await bcryptjs.hash(password, 10);
+    if (existingUser.rows.length > 0) {
+      return res.status(409).json({
+        success: false,
+        error: 'Email already registered'
+      });
+    }
 
-      // 建立新使用者
-      db.query(
-        'INSERT INTO users (email, password, first_name, last_name, phone, country) VALUES (?, ?, ?, ?, ?, ?)',
-        [email, hashedPassword, first_name, last_name, phone, country],
-        (err, results) => {
-          if (err) {
-            return res.status(500).json({
-              success: false,
-              error: 'Error creating user',
-              details: err.message
-            });
-          }
+    // Hash password
+    const hashedPassword = await bcryptjs.hash(password, 10);
 
-          return res.status(201).json({
-            success: true,
-            message: 'User registered successfully',
-            userId: results.insertId
-          });
-        }
+    // Create user
+    const userResult = await db.query(
+      `INSERT INTO users (email, password_hash, role, profile, first_name, last_name, phone, country)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING id, email, role, status`,
+      [
+        email,
+        hashedPassword,
+        userRole,
+        JSON.stringify(profile || {}),
+        profile?.firstName,
+        profile?.lastName,
+        profile?.phone,
+        profile?.country
+      ]
+    );
+
+    const user = userResult.rows[0];
+
+    // If supplier, create supplier profile
+    if (userRole === 'supplier' && profile?.companyName) {
+      await db.query(
+        `INSERT INTO suppliers (user_id, company_name, contact_info, kyc_status)
+         VALUES ($1, $2, $3, 'pending')`,
+        [user.id, profile.companyName, JSON.stringify(profile.contactInfo || {})]
       );
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'User registered successfully',
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        status: user.status
+      }
     });
   } catch (error) {
-    return res.status(500).json({
+    console.error('Registration error:', error);
+    res.status(500).json({
       success: false,
       error: 'Server error',
       details: error.message
@@ -74,12 +102,15 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// 使用者登入
+/**
+ * POST /api/auth/login
+ * User login
+ */
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 驗證輸入
+    // Validate input
     if (!email || !password) {
       return res.status(400).json({
         success: false,
@@ -87,63 +118,83 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const db = req.app.get('db');
-    db.query('SELECT * FROM users WHERE email = ?', [email], async (err, results) => {
-      if (err) {
-        return res.status(500).json({
-          success: false,
-          error: 'Database error'
-        });
-      }
+    // Find user
+    const result = await db.query(
+      'SELECT id, email, password_hash, role, first_name, last_name, status FROM users WHERE email = $1',
+      [email]
+    );
 
-      // 檢查使用者是否存在
-      if (!results || results.length === 0) {
-        return res.status(401).json({
-          success: false,
-          error: 'Email or password incorrect'
-        });
-      }
-
-      // 驗證密碼
-      const isPasswordValid = await bcryptjs.compare(password, results[0].password);
-      if (!isPasswordValid) {
-        return res.status(401).json({
-          success: false,
-          error: 'Email or password incorrect'
-        });
-      }
-
-      // 產生 JWT token
-      const token = jwt.sign(
-        { id: results[0].id, email: results[0].email, role: results[0].role },
-        process.env.JWT_SECRET || 'your_jwt_secret_key_here',
-        { expiresIn: '7d' }
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: 'Login successful',
-        token,
-        user: {
-          id: results[0].id,
-          email: results[0].email,
-          first_name: results[0].first_name,
-          last_name: results[0].last_name
-        }
+    if (result.rows.length === 0) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
       });
+    }
+
+    const user = result.rows[0];
+
+    // Check if account is active
+    if (user.status !== 'active') {
+      return res.status(403).json({
+        success: false,
+        error: 'Account is not active'
+      });
+    }
+
+    // Verify password
+    const isPasswordValid = await bcryptjs.compare(password, user.password_hash);
+    
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid email or password'
+      });
+    }
+
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+      { expiresIn: '7d' }
+    );
+
+    const refreshToken = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        firstName: user.first_name,
+        lastName: user.last_name
+      }
     });
   } catch (error) {
-    return res.status(500).json({
+    console.error('Login error:', error);
+    res.status(500).json({
       success: false,
-      error: 'Server error'
+      error: 'Server error',
+      details: error.message
     });
   }
 });
 
-// 獲取當前使用者
-router.get('/me', (req, res) => {
+/**
+ * GET /api/auth/me
+ * Get current user
+ */
+router.get('/me', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
+    
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -152,25 +203,32 @@ router.get('/me', (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
-    const db = req.app.get('db');
 
-    db.query('SELECT id, email, first_name, last_name, phone, country FROM users WHERE id = ?', [decoded.id], (err, results) => {
-      if (err || !results.length) {
-        return res.status(404).json({
-          success: false,
-          error: 'User not found'
-        });
-      }
+    const result = await db.query(
+      `SELECT id, email, role, first_name as "firstName", last_name as "lastName", 
+              phone, country, language_preference as "languagePreference", 
+              currency_preference as "currencyPreference", profile
+       FROM users WHERE id = $1`,
+      [decoded.id]
+    );
 
-      return res.status(200).json({
-        success: true,
-        user: results[0]
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
       });
+    }
+
+    res.json({
+      success: true,
+      user: result.rows[0]
     });
   } catch (error) {
-    return res.status(401).json({
+    console.error('Get user error:', error);
+    res.status(401).json({
       success: false,
-      error: 'Invalid token'
+      error: 'Invalid token',
+      details: error.message
     });
   }
 });
