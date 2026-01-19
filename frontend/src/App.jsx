@@ -2,6 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
 import HomePage from './components/HomePage';
+import LoginPage from './components/LoginPage';
+import ProductsPage from './components/ProductsPage';
+import ProductDetailPage from './components/ProductDetailPage';
+import MyBookingsPage from './components/MyBookingsPage';
+import SupplierDashboard from './components/SupplierDashboard';
+import AIItineraryGenerator from './components/AIItineraryGenerator';
 import './App.css';
 
 const App = () => {
@@ -19,8 +25,12 @@ const App = () => {
             }
           });
           if (response.ok) {
-            const userData = await response.json();
-            setUser(userData);
+            const data = await response.json();
+            if (data.success) {
+              setUser(data.user);
+            }
+          } else {
+            localStorage.removeItem('token');
           }
         }
       } catch (error) {
@@ -34,7 +44,12 @@ const App = () => {
   }, []);
 
   const handleLogout = () => {
+    localStorage.removeItem('token');
     setUser(null);
+  };
+
+  const handleLogin = (userData) => {
+    setUser(userData);
   };
 
   if (loading) {
@@ -48,6 +63,12 @@ const App = () => {
         <main className="main-content">
           <Routes>
             <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route path="/products" element={<ProductsPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+            <Route path="/my-bookings" element={<MyBookingsPage />} />
+            <Route path="/ai-itinerary" element={<AIItineraryGenerator />} />
+            <Route path="/supplier/dashboard" element={<SupplierDashboard />} />
           </Routes>
         </main>
         <footer className="footer">

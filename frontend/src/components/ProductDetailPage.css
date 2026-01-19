@@ -1,0 +1,317 @@
+.product-detail-page {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.product-detail-container {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 30px;
+}
+
+.product-main {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.product-images .main-image {
+  width: 100%;
+  height: 500px;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.product-images .main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.thumbnail-images {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.thumbnail-images img {
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.thumbnail-images img:hover {
+  transform: scale(1.05);
+}
+
+.product-content h1 {
+  font-size: 2rem;
+  color: #1a1a1a;
+  margin-bottom: 15px;
+}
+
+.product-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
+}
+
+.product-meta span {
+  font-size: 1rem;
+  color: #666;
+}
+
+.product-meta .rating {
+  color: #FFA500;
+  font-weight: 600;
+}
+
+.product-description,
+.product-itinerary,
+.product-policies {
+  margin-bottom: 30px;
+}
+
+.product-description h2,
+.product-itinerary h2,
+.product-policies h2 {
+  font-size: 1.5rem;
+  color: #1a1a1a;
+  margin-bottom: 15px;
+}
+
+.product-description p {
+  line-height: 1.8;
+  color: #666;
+}
+
+.itinerary-content,
+.product-policies pre {
+  background: #f8f9fa;
+  padding: 20px;
+  border-radius: 8px;
+  white-space: pre-wrap;
+  font-size: 0.95rem;
+}
+
+.booking-sidebar {
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+.booking-card {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.booking-card h3 {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #1a1a1a;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input[type="date"] {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.quantity-selector {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: center;
+  background: #f8f9fa;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.quantity-selector button {
+  width: 35px;
+  height: 35px;
+  border: none;
+  background: #FF6B6B;
+  color: white;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.quantity-selector button:hover {
+  background: #ee5a5a;
+}
+
+.quantity-selector span {
+  font-size: 1.2rem;
+  font-weight: 600;
+  min-width: 30px;
+  text-align: center;
+}
+
+.availability-info {
+  background: #e8f5e9;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.availability-info p {
+  margin: 5px 0;
+  color: #2e7d32;
+  font-weight: 600;
+}
+
+.get-quote-button,
+.book-button {
+  width: 100%;
+  padding: 15px;
+  background: #FF6B6B;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.3s;
+  margin-bottom: 10px;
+}
+
+.get-quote-button:hover,
+.book-button:hover {
+  background: #ee5a5a;
+}
+
+.get-quote-button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.back-button {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  color: #FF6B6B;
+  border: 2px solid #FF6B6B;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-button:hover {
+  background: #FF6B6B;
+  color: white;
+}
+
+.quote-summary {
+  margin-top: 20px;
+}
+
+.quote-summary h4 {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: #1a1a1a;
+}
+
+.quote-breakdown {
+  margin-bottom: 15px;
+}
+
+.quote-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.quote-total {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+  font-size: 1.3rem;
+  color: #FF6B6B;
+  border-top: 2px solid #FF6B6B;
+  margin-top: 10px;
+}
+
+.quote-validity {
+  text-align: center;
+  color: #999;
+  font-size: 0.9rem;
+  margin: 15px 0;
+}
+
+.loading-container,
+.error-container {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #FF6B6B;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@media (max-width: 1024px) {
+  .product-detail-container {
+    grid-template-columns: 1fr;
+  }
+
+  .booking-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .product-content h1 {
+    font-size: 1.5rem;
+  }
+
+  .product-images .main-image {
+    height: 300px;
+  }
+
+  .product-meta {
+    flex-direction: column;
+    gap: 10px;
+  }
+}

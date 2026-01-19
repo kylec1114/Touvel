@@ -21,24 +21,31 @@ const Header = ({ user, onLogout }) => {
         </Link>
         
         <nav className="nav-menu">
-          <Link to="/" className="nav-link">Home</Link>
-          <Link to="/trips" className="nav-link">My Trips</Link>
-          <Link to="/bookings" className="nav-link">Bookings</Link>
-          <Link to="/destinations" className="nav-link">Destinations</Link>
+          <Link to="/" className="nav-link">首頁</Link>
+          <Link to="/products" className="nav-link">探索產品</Link>
+          <Link to="/ai-itinerary" className="nav-link">🤖 AI 行程</Link>
+          {user && user.role === 'supplier' && (
+            <Link to="/supplier/dashboard" className="nav-link">供應商後台</Link>
+          )}
+          {user && user.role === 'traveler' && (
+            <Link to="/my-bookings" className="nav-link">我的預訂</Link>
+          )}
         </nav>
 
         <div className="header-actions">
           {user ? (
             <>
-              <span className="user-greeting">Welcome, {user.name}</span>
+              <span className="user-greeting">
+                歡迎，{user.firstName || user.email}
+              </span>
               <button onClick={handleLogout} className="btn-logout">
-                Logout
+                登出
               </button>
             </>
           ) : (
             <>
-              <Link to="/login" className="btn-login">Login</Link>
-              <Link to="/register" className="btn-register">Register</Link>
+              <Link to="/login" className="btn-login">登入</Link>
+              <Link to="/register" className="btn-register">註冊</Link>
             </>
           )}
         </div>
